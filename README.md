@@ -14,14 +14,13 @@
 - ⏸ **Pause/Resume** any time from the menu bar
 - 🔒 **Private:** files only move *between folders on your Mac*. Nothing is uploaded.
 
-## Install
+## Install (3 steps)
 
-1. Download **`Dropsort.dmg`** from the [latest release](../../releases/latest).
-2. Open it and drag **Dropsort** into **Applications**.
-3. **First launch:** right-click Dropsort → **Open** → **Open** (needed once because the app isn't notarized — see note below).
-4. When asked, click **Open Settings** and switch **Dropsort ON** under **Full Disk Access**. This lets it move files in the folders you pick. (You can also do this anytime via the menu-bar icon → *Grant Full Disk Access…*)
+1. Download **`Dropsort.dmg`** from the [latest release](../../releases/latest), open it, and drag **Dropsort** into **Applications**.
+2. **First launch only:** right-click Dropsort → **Open** → **Open** (one-time Gatekeeper step — see note below).
+3. A **welcome window** walks you through it: click **Allow File Access**, flip the **Dropsort** switch on, and it confirms **"✅ All set"** automatically.
 
-That's it — Dropsort lives in your menu bar (tray icon ▾) and starts at login.
+That's it — Dropsort lives in your menu bar (tray icon ▾), starts at login, and begins sorting immediately. You can reopen the guide anytime via the menu-bar icon → *Set Up Dropsort…*
 
 > **Gatekeeper note:** Dropsort is open-source and *ad-hoc signed*, not Apple-notarized (notarization needs a paid Apple Developer account). That's why the first open needs a right-click. If you'd rather not, [build it yourself](#build-from-source) in one command.
 

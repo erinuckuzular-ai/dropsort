@@ -241,3 +241,87 @@ final class SheetHandler: NSObject {
     }
     @objc func cancel() { parent.endSheet(sheet); sheet.orderOut(nil) }
 }
+
+// =====================================================================
+// MARK: - Onboarding / setup window (makes first-run permission easy)
+// =====================================================================
+
+final class OnboardingWindowController: NSWindowController {
+    var statusLabel: NSTextField!
+    var primaryButton: NSButton!
+    var poll: Timer?
+
+    convenience init() {
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 380),
+                         styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        w.title = "Set Up Dropsort"
+        w.center()
+        self.init(window: w)
+        buildUI()
+    }
+
+    func buildUI() {
+        guard let c = window?.contentView else { return }
+        let pad: CGFloat = 28, width: CGFloat = 480 - pad*2
+
+        // app icon
+        if let icon = NSApp.applicationIconImage {
+            let iv = NSImageView(frame: NSRect(x: (480-72)/2, y: 286, width: 72, height: 72))
+            iv.image = icon; c.addSubview(iv)
+        }
+
+        let title = NSTextField(labelWithString: "Welcome to Dropsort")
+        title.font = NSFont.boldSystemFont(ofSize: 22); title.alignment = .center
+        title.frame = NSRect(x: pad, y: 250, width: width, height: 30); c.addSubview(title)
+
+        let body = NSTextField(wrappingLabelWithString:
+            "Dropsort keeps your Downloads, Desktop, and any folder you pick tidy — automatically.\n\nIt just needs your OK to move files. One click:")
+        body.alignment = .center; body.font = NSFont.systemFont(ofSize: 13)
+        body.textColor = .secondaryLabelColor
+        body.frame = NSRect(x: pad, y: 168, width: width, height: 70); c.addSubview(body)
+
+        primaryButton = NSButton(title: "Allow File Access", target: self, action: #selector(grant))
+        primaryButton.bezelStyle = .rounded
+        primaryButton.controlSize = .large
+        primaryButton.keyEquivalent = "\r"
+        primaryButton.frame = NSRect(x: (480-220)/2, y: 120, width: 220, height: 36); c.addSubview(primaryButton)
+
+        let hint = NSTextField(wrappingLabelWithString: "This opens System Settings → turn on Dropsort in the list (drag it in from the Finder window if it isn’t there).")
+        hint.alignment = .center; hint.font = NSFont.systemFont(ofSize: 11); hint.textColor = .tertiaryLabelColor
+        hint.frame = NSRect(x: pad, y: 78, width: width, height: 34); c.addSubview(hint)
+
+        statusLabel = NSTextField(labelWithString: "⏳ Waiting for permission…")
+        statusLabel.alignment = .center; statusLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        statusLabel.textColor = .secondaryLabelColor
+        statusLabel.frame = NSRect(x: pad, y: 36, width: width, height: 22); c.addSubview(statusLabel)
+
+        updateStatus()
+        poll = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.updateStatus() }
+    }
+
+    @objc func grant() {
+        NSWorkspace.shared.selectFile(Bundle.main.bundlePath, inFileViewerRootedAtPath: "")
+        if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFilesAccess") {
+            NSWorkspace.shared.open(u)
+        }
+    }
+
+    func updateStatus() {
+        if dropsortHasFullAccess() {
+            statusLabel.stringValue = "✅ All set — Dropsort is now sorting your files!"
+            statusLabel.textColor = .systemGreen
+            primaryButton.title = "Done"
+            primaryButton.target = self
+            primaryButton.action = #selector(finish)
+            poll?.invalidate(); poll = nil
+            sweep(reason: "onboarded")
+        } else {
+            statusLabel.stringValue = "⏳ Waiting for permission…"
+            statusLabel.textColor = .secondaryLabelColor
+        }
+    }
+
+    @objc func finish() { window?.close() }
+
+    override func close() { poll?.invalidate(); poll = nil; super.close() }
+}

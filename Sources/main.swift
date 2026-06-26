@@ -178,6 +178,13 @@ func safeMove(_ src: URL, toDir destDir: URL) {
     }
 }
 
+// true only if every watched folder is actually readable (i.e. access granted)
+func dropsortHasFullAccess() -> Bool {
+    let folders = Store.shared.config.watchFolders
+    if folders.isEmpty { return true }
+    return folders.allSatisfy { (try? fm.contentsOfDirectory(atPath: expand($0))) != nil }
+}
+
 let sweepQueue = DispatchQueue(label: "dropsort.sweep")
 var sweeping = false
 
@@ -254,6 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var debounce: DispatchWorkItem?
     var timer: Timer?
     var settings: SettingsWindowController?
+    var onboarding: OnboardingWindowController?
 
     func applicationDidFinishLaunching(_ n: Notification) {
         Store.shared.load()
@@ -278,7 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(mk("Settings…", #selector(openSettings), ","))
         menu.addItem(mk("View Log", #selector(openLog)))
         menu.addItem(.separator())
-        menu.addItem(mk("Grant Full Disk Access…", #selector(grantFDA)))
+        menu.addItem(mk("Set Up Dropsort…", #selector(showOnboarding)))
         menu.addItem(.separator())
         menu.addItem(mk("Quit Dropsort", #selector(quit), "q"))
         statusItem.menu = menu
@@ -292,20 +300,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    @objc func showOnboarding() {
+        if onboarding == nil { onboarding = OnboardingWindowController() }
+        onboarding?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        onboarding?.window?.center()
+        onboarding?.window?.makeKeyAndOrderFront(nil)
+    }
     func checkAccessAndPrompt() {
-        let blocked = Store.shared.config.watchFolders.contains { wf in
-            (try? fm.contentsOfDirectory(atPath: expand(wf))) == nil
-        }
-        guard blocked else { return }
-        DispatchQueue.main.async {
-            let a = NSAlert()
-            a.messageText = "Dropsort needs permission to sort your files"
-            a.informativeText = "Give Dropsort Full Disk Access so it can move files in the folders you watch:\n\n1. Click “Open Settings”.\n2. Turn on Dropsort in the list (drag it in with ＋ if it isn’t there).\n\nDropsort only ever moves files between folders you choose — nothing leaves your Mac."
-            a.addButton(withTitle: "Open Settings")
-            a.addButton(withTitle: "Later")
-            NSApp.activate(ignoringOtherApps: true)
-            if a.runModal() == .alertFirstButtonReturn { self.grantFDA() }
-        }
+        if !dropsortHasFullAccess() { DispatchQueue.main.async { self.showOnboarding() } }
     }
     func mk(_ t: String, _ s: Selector, _ k: String = "") -> NSMenuItem {
         let mi = NSMenuItem(title: t, action: s, keyEquivalent: k); mi.target = self; return mi
