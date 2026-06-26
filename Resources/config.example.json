@@ -1,0 +1,17 @@
+{
+  "watchFolders" : [ "~/Downloads", "~/Desktop" ],
+  "fallbackByType" : true,
+  "fallbackDest" : "Media (Unsorted)",
+  "paused" : false,
+  "rules" : [
+    { "name": "Screenshots", "keywords": ["screenshot","screen shot","cleanshot"], "dest": "Screenshots", "splitByType": false, "appliesTo": "files" },
+    { "name": "Screen Recordings", "keywords": ["screen recording"], "dest": "Screen Recordings", "splitByType": false, "appliesTo": "files" },
+    { "name": "Installers", "keywords": [".app",".dmg",".pkg"], "dest": "Media (Unsorted)/Installers", "splitByType": false, "appliesTo": "both" },
+    { "name": "Cloud Bundles", "keywords": ["drive-download","wetransfer_","thefellas_","frame.io","+transfer"], "dest": "WeTransfer", "splitByType": false, "appliesTo": "folders" },
+    { "name": "App & Dev Projects", "keywords": ["skedula","scorer","production-schedule","brighton"], "dest": "App & Dev Projects", "splitByType": false, "appliesTo": "both" },
+    { "name": "Admin", "keywords": ["tax","invoice","receipt"], "dest": "Admin & Misc", "splitByType": false, "appliesTo": "both" },
+    { "name": "Punchin", "keywords": ["punchin"], "dest": "Shows/Punchin", "splitByType": true, "appliesTo": "both" },
+    { "name": "Chloe vs The World", "keywords": ["chloe","cvtw"], "dest": "Shows/Chloe vs The World", "splitByType": true, "appliesTo": "both" },
+    { "name": "Back Side", "keywords": ["backside","back side","bs "], "dest": "Shows/Back Side", "splitByType": true, "appliesTo": "both" }
+  ]
+}
