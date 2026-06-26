@@ -5,9 +5,10 @@ APP="$HOME/Applications/Dropsort.app"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Compiling…"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 xcrun swiftc -O "$DIR/Sources/main.swift" "$DIR/Sources/Settings.swift" -o "$APP/Contents/MacOS/Dropsort"
-cp "$DIR/Resources/Info.plist" "$APP/Contents/Info.plist"
+cp "$DIR/Resources/Info.plist"   "$APP/Contents/Info.plist"
+cp "$DIR/Resources/Dropsort.icns" "$APP/Contents/Resources/Dropsort.icns"
 codesign --force --deep --sign - "$APP" 2>/dev/null || true
 
 echo "Installing login agent…"
