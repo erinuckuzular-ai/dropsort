@@ -249,10 +249,11 @@ final class SheetHandler: NSObject {
 final class OnboardingWindowController: NSWindowController {
     var statusLabel: NSTextField!
     var primaryButton: NSButton!
+    var sortButton: NSButton!
     var poll: Timer?
 
     convenience init() {
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 380),
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 446),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
         w.title = "Set Up Dropsort"
         w.center()
@@ -266,37 +267,56 @@ final class OnboardingWindowController: NSWindowController {
 
         // app icon
         if let icon = NSApp.applicationIconImage {
-            let iv = NSImageView(frame: NSRect(x: (480-72)/2, y: 286, width: 72, height: 72))
+            let iv = NSImageView(frame: NSRect(x: (480-72)/2, y: 352, width: 72, height: 72))
             iv.image = icon; c.addSubview(iv)
         }
 
         let title = NSTextField(labelWithString: "Welcome to Dropsort")
         title.font = NSFont.boldSystemFont(ofSize: 22); title.alignment = .center
-        title.frame = NSRect(x: pad, y: 250, width: width, height: 30); c.addSubview(title)
+        title.frame = NSRect(x: pad, y: 316, width: width, height: 30); c.addSubview(title)
 
         let body = NSTextField(wrappingLabelWithString:
             "Dropsort keeps your Downloads, Desktop, and any folder you pick tidy — automatically.\n\nIt just needs your OK to move files. One click:")
         body.alignment = .center; body.font = NSFont.systemFont(ofSize: 13)
         body.textColor = .secondaryLabelColor
-        body.frame = NSRect(x: pad, y: 168, width: width, height: 70); c.addSubview(body)
+        body.frame = NSRect(x: pad, y: 234, width: width, height: 70); c.addSubview(body)
 
         primaryButton = NSButton(title: "Allow File Access", target: self, action: #selector(grant))
         primaryButton.bezelStyle = .rounded
         primaryButton.controlSize = .large
         primaryButton.keyEquivalent = "\r"
-        primaryButton.frame = NSRect(x: (480-220)/2, y: 120, width: 220, height: 36); c.addSubview(primaryButton)
+        primaryButton.frame = NSRect(x: (480-220)/2, y: 186, width: 220, height: 36); c.addSubview(primaryButton)
 
         let hint = NSTextField(wrappingLabelWithString: "This opens System Settings → turn on Dropsort in the list (drag it in from the Finder window if it isn’t there).")
         hint.alignment = .center; hint.font = NSFont.systemFont(ofSize: 11); hint.textColor = .tertiaryLabelColor
-        hint.frame = NSRect(x: pad, y: 78, width: width, height: 34); c.addSubview(hint)
+        hint.frame = NSRect(x: pad, y: 144, width: width, height: 34); c.addSubview(hint)
 
         statusLabel = NSTextField(labelWithString: "⏳ Waiting for permission…")
         statusLabel.alignment = .center; statusLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         statusLabel.textColor = .secondaryLabelColor
-        statusLabel.frame = NSRect(x: pad, y: 36, width: width, height: 22); c.addSubview(statusLabel)
+        statusLabel.frame = NSRect(x: pad, y: 104, width: width, height: 22); c.addSubview(statusLabel)
+
+        // divider
+        let line = NSBox(frame: NSRect(x: pad, y: 84, width: width, height: 1)); line.boxType = .separator
+        c.addSubview(line)
+
+        sortButton = NSButton(title: "🧹  Sort My Folders Now", target: self, action: #selector(sortNowTapped))
+        sortButton.bezelStyle = .rounded
+        sortButton.frame = NSRect(x: (480-260)/2, y: 36, width: 260, height: 34); c.addSubview(sortButton)
 
         updateStatus()
         poll = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in self?.updateStatus() }
+    }
+
+    @objc func sortNowTapped() {
+        guard dropsortHasFullAccess() else { NSSound.beep(); return }
+        sweep(reason: "manual")
+        statusLabel.stringValue = "🧹 Sorting your folders…"
+        statusLabel.textColor = .systemBlue
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.statusLabel.stringValue = "✅ Sorted! New files will be filed automatically from now on."
+            self?.statusLabel.textColor = .systemGreen
+        }
     }
 
     @objc func grant() {
@@ -307,7 +327,9 @@ final class OnboardingWindowController: NSWindowController {
     }
 
     func updateStatus() {
-        if dropsortHasFullAccess() {
+        let ok = dropsortHasFullAccess()
+        sortButton.isEnabled = ok
+        if ok {
             statusLabel.stringValue = "✅ All set — Dropsort is now sorting your files!"
             statusLabel.textColor = .systemGreen
             primaryButton.title = "Done"
